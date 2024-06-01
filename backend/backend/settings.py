@@ -18,12 +18,15 @@ from dotenv import dotenv_values
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-if os.environ.get("ENV") == "dev":
-    config = dotenv_values(".env.dev")
-if os.environ.get("ENV") == "staging":
-    config = dotenv_values(".env.staging")
-if os.environ.get("ENV") == "prod":
-    config = dotenv_values(".env.prod")
+
+config = dotenv_values(".env.dev")
+
+# if os.environ.get("ENV") == "dev":
+#     config = dotenv_values(".env.dev")
+# if os.environ.get("ENV") == "staging":
+#     config = dotenv_values(".env.staging")
+# if os.environ.get("ENV") == "prod":
+#     config = dotenv_values(".env.prod")
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/

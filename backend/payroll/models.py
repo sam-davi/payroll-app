@@ -6,7 +6,7 @@ from rest_framework import serializers
 from django.db import models
 from django.db.models.signals import pre_save
 from django.dispatch import receiver
-
+from datetime import datetime, timedelta
 
 class TaxCode(models.Model):
     code = models.CharField(primary_key=True, max_length=100)
@@ -44,91 +44,128 @@ class Employee(models.Model):
     def name(self):
         return " ".join([self.first_name, self.last_name])
 
-    def clean(self):
-        errors = defaultdict(list)
 
-        try:
-            self.first_name = self.first_name.title()
-            self.middle_name = self.middle_name.title()
-            self.last_name = self.last_name.title()
-        except AttributeError:
-            errors["name"].append("Name could not be parsed")
-
-        tax_number = 0
-
-        try:
-            tax_number = int(self.tax_number)
-        except ValueError:
-            errors["tax_number"].append("Tax number must be a number")
-
-        if not (10_000_000 < tax_number < 150_000_000):
-            errors["tax_number"].append(
-                "Tax numbers should be between 010-000-000 and 150-000-000"
-            )
-
-        # TODO check if tax number is valid
-
-        if errors:
-            raise serializers.ValidationError(errors)
-
-    def save(self, *args, **kwargs):
-        self.clean()
-        return super().save(*args, **kwargs)
-
-
-@receiver(pre_save, sender=Employee)
-def employee_pre_save(sender, instance, **kwargs):
-    # if not instance.tax_number:
-    #     raise Exception("Tax number is required")
-
-    instance.first_name = instance.first_name.title()
-    instance.last_name = instance.last_name.title()
-    instance.middle_name = instance.middle_name.title()
-
-
-class SettingCategory(models.Model):
+class PayGroup(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
-    name = models.CharField(max_length=100)
-    order = models.IntegerField()
+    code = models.CharField(max_length=100)
+    description = models.CharField(max_length=400)
 
     def __str__(self):
-        return self.name
+        return self.code
 
 
-class SettingCategoryField(models.Model):
+class PayFreqeuncy(models.TextChoices):
+    WEEKLY = "weekly"
+    FORTNIGHTLY = "fortnightly"
+    FOURWEEKLY = "fourweekly"
+    MONTHLY = "monthly"
+
+
+class PayPeriod(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
-    category = models.ForeignKey(SettingCategory, on_delete=models.CASCADE)
+    group = models.ForeignKey(PayGroup, on_delete=models.CASCADE)
 
-    name = models.CharField(max_length=100)
-    order = models.IntegerField()
+    frequency = models.CharField(
+        max_length=20, choices=PayFreqeuncy.choices, default=PayFreqeuncy.WEEKLY
+    )
+
+    start = models.DateField()
+    end = models.DateField()
+    pay_date = models.DateField(null=True, blank=True)
 
     def __str__(self):
-        return self.name
+        return f"{self.group} - {self.end}"
 
 
-class Setting(models.Model):
+class AllowanceType(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
-    employee = models.ForeignKey(Employee, on_delete=models.CASCADE)
-    field = models.ForeignKey(SettingCategoryField, on_delete=models.CASCADE)
-
-    effective_start = models.DateField()
-    effective_end = models.DateField(null=True, blank=True)
-    value = models.CharField(max_length=100)
+    code = models.CharField(max_length=100)
+    description = models.CharField(max_length=400)
 
     def __str__(self):
-        return self.name
+        return self.code
+
+
+class AccumulatorUnits(models.TextChoices):
+    HOURS = "hours"
+    DAYS = "days"
+    WEEKS = "weeks"
+    AMOUNT = "amount"
+
+
+class Accumulator(models.Model):
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    code = models.CharField(max_length=100)
+    description = models.CharField(max_length=400)
+    unit = models.CharField(
+        max_length=20, choices=AccumulatorUnits.choices, default=AccumulatorUnits.AMOUNT
+    )
+
+    def __str__(self):
+        return self.code
+
+
+class AllowanceTypeAccumulator(models.Model):
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    type = models.ForeignKey(
+        AllowanceType, related_name="type_accumulators", on_delete=models.CASCADE
+    )
+    accumulator = models.ForeignKey(
+        Accumulator, related_name="allowance_types", on_delete=models.CASCADE
+    )
+
+    def __str__(self):
+        return f"{self.accumulator} - {self.type}"
+
+
+class Allowance(models.Model):
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    code = models.CharField(max_length=100)
+    description = models.CharField(max_length=400)
+
+    type = models.ForeignKey(
+        AllowanceType, related_name="allowances", on_delete=models.CASCADE
+    )
+
+    def __str__(self):
+        return self.code
 
 
 class Transaction(models.Model):
-    """Model with UUID pk and contains payroll transactions"""
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    employee = models.ForeignKey(
+        Employee, related_name="transactions", on_delete=models.CASCADE, null=True
+    )
+    allowance = models.ForeignKey(
+        Allowance, related_name="transactions", on_delete=models.CASCADE, null=True
+    )
+
+    pay_period = models.ForeignKey(
+        PayPeriod,
+        related_name="pay_period_transactions",
+        on_delete=models.CASCADE,
+        null=True,
+    )
+    for_period = models.ForeignKey(
+        PayPeriod,
+        related_name="for_period_transactions",
+        on_delete=models.CASCADE,
+        null=True,
+    )
 
     date = models.DateField()
 
@@ -140,3 +177,69 @@ class Transaction(models.Model):
     rate = models.FloatField()
     factor = models.FloatField(default=1)
     amount = models.FloatField()
+
+
+class ReferenceDates(models.TextChoices):
+    PERIOD_DATE = "period_date"
+    TRANSACTION_DATE = "transaction_date"
+
+
+class Rate(models.Model):
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    code = models.CharField(max_length=100)
+    description = models.CharField(max_length=400)
+
+    numerator = models.ForeignKey(
+        Accumulator, related_name="as_numerator_rates", on_delete=models.CASCADE
+    )
+    denominator = models.ForeignKey(
+        Accumulator, related_name="as_denominator_rates", on_delete=models.CASCADE
+    )
+
+    factor = models.FloatField(default=1)
+
+    days_range = models.IntegerField(default=1)
+
+    reference_date = models.CharField(
+        max_length=100,
+        choices=ReferenceDates.choices,
+        default=ReferenceDates.TRANSACTION_DATE,
+    )
+
+    def __str__(self):
+        return self.code
+
+    def get_range(self, employee, date):
+        transactions = Transaction.objects.filter(employee=employee)
+        from_date = date - timedelta(days=self.days_range)
+        if self.reference_date == ReferenceDates.TRANSACTION_DATE:
+            transactions = transactions.filter(date__lt=date, date__gte=from_date)
+        if self.reference_date == ReferenceDates.PERIOD_DATE:
+            transactions = transactions.filter(
+                for_period__end__lt=date, for_period__end__gte=from_date
+            )
+        return transactions
+
+    def get_numerator(self, employee, date):
+        return sum(
+            self.get_range(employee, date)
+            .filter(allowance__type__type_accumulators__accumulator=self.numerator)
+            .values_list(f"{self.numerator.unit}", flat=True)
+        )
+
+    def get_denominator(self, employee, date):
+        return sum(
+            self.get_range(employee, date)
+            .filter(allowance__type__type_accumulators__accumulator=self.denominator)
+            .values_list(f"{self.denominator.unit}", flat=True)
+        )
+
+    def get_rate(self, employee, date):
+        denominator = self.get_denominator(employee, date)
+        return (
+            0
+            if denominator == 0
+            else self.get_numerator(employee, date) * self.factor / denominator
+        )
