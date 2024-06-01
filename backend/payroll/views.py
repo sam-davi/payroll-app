@@ -1,13 +1,16 @@
-from django.shortcuts import render
-from django.db.models import F
-
 from rest_framework import viewsets
+
 from payroll import models, serializers
 
 
 class EmployeeViewSet(viewsets.ModelViewSet):
     queryset = models.Employee.objects.all()
     serializer_class = serializers.EmployeeSerializer
+
+
+class EmployeeHistoryViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = models.Employee.objects.earnings_history()
+    serializer_class = serializers.EmployeeHistorySerializer
 
 
 class TaxCodeViewSet(viewsets.ModelViewSet):
@@ -48,16 +51,6 @@ class PayGroupViewSet(viewsets.ModelViewSet):
 class PayPeriodViewSet(viewsets.ModelViewSet):
     queryset = models.PayPeriod.objects.all()
     serializer_class = serializers.PayPeriodSerializer
-
-
-# class AccumulatorValueViewSet(viewsets.ModelViewSet):
-#     queryset = models.Accumulator.objects.all()
-#     serializer_class = serializers.AccumulatorValueSerializer
-
-
-# class TransactionAccumulatorViewSet(viewsets.ModelViewSet):
-#     queryset = models.Transaction.objects.all()
-#     serializer_class = serializers.TransactionAccumulatorSerializer
 
 
 class RateViewSet(viewsets.ModelViewSet):

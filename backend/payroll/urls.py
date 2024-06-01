@@ -6,6 +6,7 @@ from payroll import views
 # Routers provide an easy way of automatically determining the URL conf.
 router = routers.DefaultRouter()
 router.register(r"employees", views.EmployeeViewSet)
+router.register(r"employee-history", views.EmployeeHistoryViewSet, "employee-history")
 router.register(r"taxcodes", views.TaxCodeViewSet)
 router.register(r"allowances", views.AllowanceViewSet)
 router.register(r"allowance-types", views.AllowanceTypeViewSet)
