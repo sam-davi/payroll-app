@@ -16,8 +16,13 @@ Including another URLconf
 """
 
 from django.urls import path, include
+from django.contrib import admin
 from django.contrib.auth.models import User
 from rest_framework import routers, serializers, viewsets
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+
+from payroll import views as payroll_views
+from api.views import CreateUserView
 
 
 # Serializers define the API representation.
@@ -41,5 +46,11 @@ router.register(r"users", UserViewSet)
 # Additionally, we include login URLs for the browsable API.
 urlpatterns = [
     path("", include(router.urls)),
+    path("admin/", admin.site.urls),
+    path("api/user/register/", CreateUserView.as_view(), name="register"),
+    path("api/token/", TokenObtainPairView.as_view(), name="get_token"),
+    path("api/token/refresh/", TokenRefreshView.as_view(), name="refresh"),
     path("api-auth/", include("rest_framework.urls", namespace="rest_framework")),
+    path("api/", include("api.urls")),
+    path("payroll/", include("payroll.urls")),
 ]

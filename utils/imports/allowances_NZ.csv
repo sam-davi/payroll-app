@@ -1,0 +1,9 @@
+code,description,unit,rate
+ANNL,"Annual Leave",W,AL-NZ
+SICK,"Sick Leave",D,FBAPS-NZ
+BERV,"Bereavement Leave",D,FBAPS-NZ
+ALT,"Alternative Leave",D,FBAPS-NZ
+STAT,"Public Holiday",D,FBAPS-NZ
+DOM,"Domestic Leave",D,FBAPS-NZ
+PHW,"Public Holiday Worked",H,PHW-NZ
+ORD,"Ordinary Time",H,HOURLY

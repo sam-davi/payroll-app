@@ -4,6 +4,9 @@ to execute with correct ENV variables
 
 powershell:
     powershell -Command { $env:ENV="dev"; python manage.py runserver }
+cmd:
+    set ENV=dev
+    py manage.py runserver
 
 .env files should contain the following variables:
     SECRET_KEY=
