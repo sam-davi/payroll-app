@@ -9,7 +9,7 @@ class Accumulator(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
 
-    code = models.CharField(max_length=100)
+    code = models.CharField(max_length=100, unique=True)
     description = models.CharField(max_length=400)
     unit = models.CharField(
         max_length=20, choices=AccumulatorUnits.choices, default=AccumulatorUnits.AMOUNT

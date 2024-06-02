@@ -2,14 +2,14 @@ from uuid import uuid4
 
 from django.db import models
 
-from payroll.models.accumulator import Accumulator
+from .accumulator import Accumulator
 
 
 class AllowanceType(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
 
-    code = models.CharField(max_length=100)
+    code = models.CharField(max_length=100, unique=True)
     description = models.CharField(max_length=400)
 
     def __str__(self):
@@ -27,6 +27,9 @@ class AllowanceTypeAccumulator(models.Model):
         Accumulator, related_name="allowance_types", on_delete=models.CASCADE
     )
 
+    class Meta:
+        unique_together = (("type", "accumulator"),)
+
     def __str__(self):
         return f"{self.accumulator} - {self.type}"
 
@@ -35,7 +38,7 @@ class Allowance(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
 
-    code = models.CharField(max_length=100)
+    code = models.CharField(max_length=100, unique=True)
     description = models.CharField(max_length=400)
 
     type = models.ForeignKey(

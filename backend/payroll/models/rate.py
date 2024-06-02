@@ -3,16 +3,16 @@ from datetime import timedelta
 
 from django.db import models
 
-from payroll.models.accumulator import Accumulator
-from payroll.models.transaction import Transaction
 from payroll.utils import ReferenceDates
+from .accumulator import Accumulator
+from .transaction import Transaction
 
 
 class Rate(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
 
-    code = models.CharField(max_length=100)
+    code = models.CharField(max_length=100, unique=True)
     description = models.CharField(max_length=400)
 
     numerator = models.ForeignKey(

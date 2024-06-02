@@ -2,9 +2,9 @@ from uuid import uuid4
 
 from django.db import models
 
-from payroll.models.allowance import Allowance
-from payroll.models.employee import Employee
-from payroll.models.payroll import PayPeriod
+from .allowance import Allowance
+from .employee import Employee
+from .payroll import PayPeriod
 
 
 class Transaction(models.Model):

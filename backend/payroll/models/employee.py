@@ -1,25 +1,27 @@
-import uuid
-from django.db import models
 from datetime import datetime
+from uuid import uuid4
+
+from django.db import models
 
 from payroll.utils import FieldTypes
-from payroll.models.tax import TaxCode
+from .tax import TaxCode
 
 
 class EmployeeManager(models.Manager):
     def earnings_history(self):
         return self.annotate(
+            period_start=models.F("transactions__for_period__start"),
             period_end=models.F("transactions__for_period__end"),
             hours=models.Sum("transactions__hours"),
             days=models.Sum("transactions__days"),
             weeks=models.Sum("transactions__weeks"),
             amount=models.Sum("transactions__amount"),
-        ).order_by("-period_end")
+        ).order_by("period_start")
 
 
 class Employee(models.Model):
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
 
     user = models.ForeignKey(
         "auth.User", on_delete=models.CASCADE, null=True, blank=True
@@ -50,7 +52,7 @@ class Employee(models.Model):
 
 class EmployeeCustomField(models.Model):
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
 
     name = models.CharField("Field Name", max_length=50)
     description = models.CharField("Field Description", max_length=200)
@@ -62,7 +64,7 @@ class EmployeeCustomField(models.Model):
 
 class EmployeeCustomFieldValue(models.Model):
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
 
     employee = models.ForeignKey(Employee, on_delete=models.CASCADE)
 
