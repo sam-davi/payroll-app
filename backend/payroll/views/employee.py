@@ -11,3 +11,13 @@ class EmployeeViewSet(viewsets.ModelViewSet):
 class EmployeeHistoryViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = models.Employee.objects.earnings_history()
     serializer_class = serializers.EmployeeHistorySerializer
+
+
+class EmployeeCustomFieldViewSet(viewsets.ModelViewSet):
+    queryset = models.EmployeeCustomField.objects.all()
+    serializer_class = serializers.EmployeeCustomFieldSerializer
+
+
+class EmployeeCustomFieldValueViewSet(viewsets.ModelViewSet):
+    queryset = models.EmployeeCustomFieldValue.objects.all()
+    serializer_class = serializers.EmployeeCustomFieldValueSerializer

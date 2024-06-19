@@ -1,12 +1,11 @@
 from rest_framework import serializers
 
 from payroll import models
-from .accumulator import AccumulatorSerializer
 
 
 class RateSerializer(serializers.HyperlinkedModelSerializer):
-    numerator_detail = AccumulatorSerializer(source="numerator", read_only=True)
-    denominator_detail = AccumulatorSerializer(source="denominator", read_only=True)
+    numerator_code = serializers.CharField()
+    denominator_code = serializers.CharField()
 
     class Meta:
         model = models.Rate
@@ -14,10 +13,10 @@ class RateSerializer(serializers.HyperlinkedModelSerializer):
             "url",
             "code",
             "description",
-            "numerator",
-            "numerator_detail",
-            "denominator",
-            "denominator_detail",
+            "unit",
+            "numerator_code",
+            "denominator_code",
+            "denominator_cap",
             "factor",
             "days_range",
             "reference_date",
