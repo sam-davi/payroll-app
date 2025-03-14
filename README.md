@@ -1,23 +1,18 @@
-# payroll-app
- 
-to execute with correct ENV variables
+# Payroll App
 
-powershell:
-    powershell -Command { $env:ENV="dev"; python manage.py runserver }
-cmd:
-    set ENV=dev
-    py manage.py runserver
+## Introduction
 
-.env files should contain the following variables:
-    SECRET_KEY=
-    DEBUG=
-    DB_NAME=
-    DB_USER=
-    DB_PASSWORD=
-    DB_HOST=
-    DB_PORT=
+This is the Payroll App, designed to manage and process payroll efficiently.
 
-.env files must be in backend directory (where manage.py is located)
-    .env.prod # production settings
-    .env.staging # staging settings
-    .env.dev # development settings
+## Environment Variables
+
+Ensure the following environment variables are set in your `.env` files:
+
+- `SECRET_KEY=`
+- `DEBUG=`
+- `DB_NAME=`
+- `DB_USER=`
+- `DB_PASSWORD=`
+- `DB_HOST=`
+- `DB_PORT=`
+
