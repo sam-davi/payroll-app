@@ -8,7 +8,7 @@ class EmployeeSerializer(serializers.HyperlinkedModelSerializer):
         model = models.Employee
         fields = [
             "url",
-            "user",
+            "code",
             "first_name",
             "middle_name",
             "last_name",
@@ -19,7 +19,8 @@ class EmployeeSerializer(serializers.HyperlinkedModelSerializer):
 
 class EmployeeHistorySerializer(serializers.Serializer):
     id = serializers.UUIDField()
-    user = serializers.CharField()
+
+    code = serializers.CharField()
     first_name = serializers.CharField()
     last_name = serializers.CharField()
 
@@ -33,39 +34,51 @@ class EmployeeHistorySerializer(serializers.Serializer):
 
     def to_representation(self, instance):
         res = super().to_representation(instance)
+        transactions = instance.transactions.filter(
+            for_period__start=res["period_start"],
+            for_period__end=res["period_end"],
+        )
+        if transactions.count() == 0:
+            return res
         res["accumulators"] = [
             {
                 "code": accumulator.code,
-                "value": sum(
-                    instance.transactions.filter(
-                        allowance__type__type_accumulators__accumulator=accumulator,
-                        for_period__start=res["period_start"],
-                        for_period__end=res["period_end"],
-                    ).values_list(f"{accumulator.unit}", flat=True)
-                ),
+                "value": accumulator.get_value(transactions),
                 "unit": accumulator.unit,
             }
-            for accumulator in models.Accumulator.objects.all()
+            for accumulator in models.Accumulator.objects.all().order_by("code")
         ]
         res["rates"] = [
             {
                 "code": rate.code,
                 "rate": rate.get_rate(instance, instance.period_start),
+                "unit": rate.unit,
             }
-            for rate in models.Rate.objects.all()
+            for rate in models.Rate.objects.all().order_by("code")
         ]
         return res
 
-    # class Meta:
-    #     fields = [
-    #         "url",
-    #         "user",
-    #         "first_name",
-    #         "last_name",
-    #         "period_end",
-    #         "accumulator",
-    #         "hours",
-    #         "days",
-    #         "weeks",
-    #         "amount",
-    #     ]
+
+class EmployeeCustomFieldSerializer(serializers.HyperlinkedModelSerializer):
+
+    class Meta:
+        model = models.EmployeeCustomField
+        fields = ["url", "name", "description", "type"]
+
+
+class EmployeeCustomFieldValueSerializer(serializers.HyperlinkedModelSerializer):
+    employee_code = serializers.CharField()
+    field_name = serializers.CharField()
+    field_code = serializers.ReadOnlyField(source="field.code")
+    field_value = serializers.CharField()
+
+    class Meta:
+        model = models.EmployeeCustomFieldValue
+        fields = [
+            "url",
+            "employee_code",
+            "field_name",
+            "field_code",
+            "field_value",
+            "effective_date",
+        ]

@@ -1,10 +1,14 @@
 from django.db import models
 
+MIN_DATE = "1900-01-01"
+MAX_DATE = "9999-12-31"
 
-class AccumulatorUnits(models.TextChoices):
+
+class Units(models.TextChoices):
     HOURS = "hours"
     DAYS = "days"
     WEEKS = "weeks"
+    QUANTITY = "quantity"
     AMOUNT = "amount"
 
 

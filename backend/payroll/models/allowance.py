@@ -33,6 +33,22 @@ class AllowanceTypeAccumulator(models.Model):
     def __str__(self):
         return f"{self.accumulator} - {self.type}"
 
+    @property
+    def type_code(self):
+        return self.type.code
+
+    @type_code.setter
+    def type_code(self, value):
+        self.type = AllowanceType.objects.get(code=value)
+
+    @property
+    def accumulator_code(self):
+        return self.accumulator.code
+
+    @accumulator_code.setter
+    def accumulator_code(self, value):
+        self.accumulator = Accumulator.objects.get(code=value)
+
 
 class Allowance(models.Model):
 
@@ -47,3 +63,11 @@ class Allowance(models.Model):
 
     def __str__(self):
         return self.code
+
+    @property
+    def type_code(self):
+        return self.type.code
+
+    @type_code.setter
+    def type_code(self, value):
+        self.type = AllowanceType.objects.get(code=value)

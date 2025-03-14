@@ -3,7 +3,7 @@ from datetime import timedelta
 
 from django.db import models
 
-from payroll.utils import ReferenceDates
+from payroll.utils import Units, ReferenceDates
 from .accumulator import Accumulator
 from .transaction import Transaction
 
@@ -15,12 +15,16 @@ class Rate(models.Model):
     code = models.CharField(max_length=100, unique=True)
     description = models.CharField(max_length=400)
 
+    unit = models.CharField(max_length=20, choices=Units.choices, default=Units.HOURS)
+
     numerator = models.ForeignKey(
         Accumulator, related_name="as_numerator_rates", on_delete=models.CASCADE
     )
     denominator = models.ForeignKey(
         Accumulator, related_name="as_denominator_rates", on_delete=models.CASCADE
     )
+
+    denominator_cap = models.FloatField(default=9999999)
 
     factor = models.FloatField(default=1)
 
@@ -35,6 +39,22 @@ class Rate(models.Model):
     def __str__(self):
         return self.code
 
+    @property
+    def numerator_code(self):
+        return self.numerator.code
+
+    @numerator_code.setter
+    def numerator_code(self, value):
+        self.numerator = Accumulator.objects.get(code=value)
+
+    @property
+    def denominator_code(self):
+        return self.denominator.code
+
+    @denominator_code.setter
+    def denominator_code(self, value):
+        self.denominator = Accumulator.objects.get(code=value)
+
     def get_range(self, employee, date):
         transactions = Transaction.objects.filter(employee=employee)
         from_date = date - timedelta(days=self.days_range)
@@ -47,18 +67,12 @@ class Rate(models.Model):
         return transactions
 
     def get_numerator(self, employee, date):
-        return sum(
-            self.get_range(employee, date)
-            .filter(allowance__type__type_accumulators__accumulator=self.numerator)
-            .values_list(f"{self.numerator.unit}", flat=True)
-        )
+        transactions = self.get_range(employee, date)
+        return self.numerator.get_value(transactions)
 
     def get_denominator(self, employee, date):
-        return sum(
-            self.get_range(employee, date)
-            .filter(allowance__type__type_accumulators__accumulator=self.denominator)
-            .values_list(f"{self.denominator.unit}", flat=True)
-        )
+        transactions = self.get_range(employee, date)
+        return min(self.denominator_cap, self.denominator.get_value(transactions))
 
     def get_rate(self, employee, date):
         denominator = self.get_denominator(employee, date)
